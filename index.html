@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Arduino a Google Sheets</title>
+	<style>
+      body {background-color: #060606;}
+      .responsive-image {display: block;margin: 0 auto;max-width: 80%;height: auto;}
+      .c-verde {background-color: #2cd0e1;padding: 10px;border-radius: 15px;
+			    max-width: 85%;margin: 0 auto 0 5%; /*S-D-Inf-Iz*/}
+      .c-gris {background-color: E3E4E5;padding: 10px;border-radius: 15px;max-width: 85%;
+			 margin: 0 auto 0 5%; /*S-D-Inf-Iz*/}
+      .c-blanco {background-color: white;padding: 10px;border-radius: 15px;max-width: 85%;
+			 margin: 0 auto 0 5%;}
+      .code-container { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 5px;}
+      .copy-button { background: #6272a4; color: #fff; padding: 10px; border-radius: 5px;}
+	</style>
+	<script>
+		function CargarImagen(url) {window.open(url, '_blank');}
+	</script>
+</head>
+<body>
+	<div style="text-align: center;color: white;"><h1>Envío de datos desde Arduino a Google Sheets</h1></div>
+	<div class="content">
+		<div class="c-verde">
+          <p>El envío de datos desde Arduino a Google Sheets es una forma eficaz de registrar y
+            visualizar información en tiempo real. Este proceso utiliza Google Apps Script para 
+            crear un <strong>punto de entrada HTTP</strong> que actúa como intermediario entre 
+            el Arduino y Google Sheets.</p>
+          <p>El código en Google Apps Script configura una <strong>URL pública</strong> a la que
+            el Arduino puede enviar datos mediante solicitudes HTTP. Al recibir los datos, el 
+            script los almacena automáticamente en un documento de Google Sheets, registrando 
+            información como mediciones de sensores, tiempos o cualquier dato relevante generado 
+            por el Arduino.</p>
+          <p>Este enfoque es ideal para proyectos de monitoreo remoto, ya que permite registrar 
+            y analizar los datos directamente en la nube de manera sencilla y accesible.</p>
+          <p>Pasos para llevar datos desde Arduino a Google Sheets</p>
+          <ol>
+            <li>Configuración de la hoja de cálculo de Google.</li>
+            <li>Configuración de Google Apps Script.</li>
+            <li>Implementación como aplicación web.</li>
+            <li>Obtención de la URL de implementación de la aplicación web.</li>
+            <li>Cambios necesarios en el código de Arduino.</li>
+            <li>Prueba y ajuste del sistema.</li>
+          </ol>
+      </div>
+	</div><br>
+	
+	<div class="c-blanco">
+      <h2 style="margin: 5px 0; color: #2cd0e1">1 - Configuración de la hoja de cálculo de Google</h2>
+      <ul><li>Crea una nueva hoja de cálculo en Google Sheets</li></ul>
+      <ul><li>Configura las columnas donde se almacenarán los datos (por ejemplo: Fecha, Hora, Nivel, 
+        Sensor1, Sensor2, etc.).</li></ul>
+      <ul><li>Copia el ID del documento de la URL (es la cadena entre /d/ y /edit).</li></ul>
+      <img src="Img/Nivel_001.jpg" alt="Descripción de la imagen" class="responsive-image">
+	</div><br>
+  
+	
+	<div class="c-blanco">
+      <h2 style="margin: 5px 0;color: #2cd0e1">2 - Configuración de Google Apps Script</h2>
+      <ul><li>Abre el menú Extensiones > Apps Script en tu hoja de cálculo ó</li></ul>
+      <ul><li>Crea un nuevo proyecto en <a href="https://script.google.com/home" target="_blank"> 
+        script.google.com/home</a></li></ul>
+      <ul><li>Pega el código siguiente en Apps Script para manejar las solicitudes HTTP y 
+        registrar los datos en la hoja de cálculo.</li></ul>
+      <ul><li>Remplaza en el codigo el <u>ID del documento GoogeSheet</u> obtenido en el punto 
+        anterior (var sheet_id) </li></ul>
+      <ul><li>De ser necesario se puede agregar mas casos en el ciclo for dependiendo
+        de los datos que necesitemos manejar</li></ul>
+      
+      
+      <div class="code-container">
+        <button class="copy-button" onclick="copyCode()">Copiar</button>
+        <pre><code>//1 - Función principal: doGet(e), maneja solicitudes GET
+
+// Si la URL de la solicitud es:
+//	https://script.google.com/macros/s/ID/exec?value1=10&value2=20
+// Se registrará algo como:
+//	{parameter: {value1: '10', value2: '20'}}
+function doGet(e) {
+  Logger.log(JSON.stringify(e)); // Registro de parámetros recibidos
+  var result = 'Ok';
+  // Validación de parámetros
+  if (e.parameter == 'undefined') {result = 'No Parameters';}
+  else {
+    // Acceso a la hoja de cálculo (ID de la hoja de cálculo)
+    var sheet_id = '1fj09zeXKgo4xgXH7G4q6WNF_CaKggKOOiQgLmUWGfNI';
+    var sheet = SpreadsheetApp.openById(sheet_id).getActiveSheet();
+    // 	Determina la fila donde se insertarán nuevos datos
+    var newRow = sheet.getLastRow() + 1;
+    //	Arreglo para almacenar datos de la nueva fila
+    var rowData = []; 
+    d = new Date();
+    //	Fecha/hora actual en la columna 0
+    rowData[0] = d; 
+    //	Hora actual en la columna 1
+    rowData[1] = d.toLocaleTimeString();
+
+    //	Procesamiento de parámetros
+    for (var param in e.parameter) {
+      Logger.log('In for loop, param=' + param);
+      // Llamada a la función stripQuotes
+      var value = stripQuotes(e.parameter[param]);
+      Logger.log(param + ':' + e.parameter[param]);
+      switch (param) {
+        case 'Nivel':
+        // Almacena `Nivel` en la columna 2
+          rowData[2] = value;
+          result = 'Written on column 2';
+          break;
+        case 'Sensor1':
+        // Almacena `Sensor1` en la columna 3
+          rowData[3] = value; 
+          result += ' y Written on column 3';
+          break;
+        default:
+        // Parámetro no reconocido
+          result = "unsupported parameter"; 
+      }
+    }
+    Logger.log(JSON.stringify(rowData));
+    // Escribir datos en la hoja
+    // (Nueva fila, Inicia columna, Numero de fila, Cantidad de columnas)
+    var newRange = sheet.getRange(newRow, 1, 1, rowData.length);
+    // Escribe los datos en la hoja (rowData[3] llega a 4 datos)
+    newRange.setValues([rowData]);
+  }
+  // Respuesta al cliente
+  // 'Written on column 2 y Written on column 3'
+  return ContentService.createTextOutput(result);
+}
+//2 - Función auxiliar: stripQuotes(value)
+// Elimina cualquier comilla simple o doble 
+function stripQuotes( value ) {
+  return value.replace(/^["']|['"]$/g, "");
+}</code></pre>
+      </div>
+      <script>
+        function copyCode() {
+          const code = document.querySelector('.code-container pre code').innerText;
+          navigator.clipboard.writeText(code);}
+      </script>
+      <p>Este código de Google Apps Script crea un punto de entrada HTTP mediante la función doGet(e). 
+        Es decir, permite procesar solicitudes GET, guardar datos enviados a través de los parámetros 
+        en una hoja de cálculo de Google Sheets y devolver una respuesta.
+        Una solicitud GET es un tipo de solicitud que un cliente (como un navegador web o una aplicación) 
+        envía a un servidor para pedir datos.
+      </p>
+  	</div><br>
+  
+  	<div class="c-blanco"><h2 style="margin: 5px 0; color: #2cd0e1">3 - Implementación como aplicación web</h2>
+      <ul><li>En Apps Script, ve a Implementar > Nueva implementación</li></ul>
+      <ul><li>Selecciona un tipo de implementación "Aplicación web".</li></ul>
+      <ul><li>Configura los permisos para que "Cualquiera con el enlace" pueda acceder.</li></ul>
+      <ul><li>Copia la URL de implementación generada (será el punto de entrada HTTP para Arduino).</li></ul>
+      <ul><li></li></ul>
+      <img src="Img/ICBYPJ.jpg" alt="Descripción de la imagen" class="responsive-image">
+	</div><br>
+	
+	<div class="c-blanco"><h2 style="margin: 5px 0; color: #2cd0e1">4 - ICTHRJ</h2>
+      <ul><li></li></ul>
+      <ul><li></li></ul>
+      <ul><li></li></ul>
+      <ul><li></li></ul>
+		<img src="Img/ICTHRJ.jpg" alt="Descripción de la imagen" class="responsive-image">
+	</div><br>
+
+
+
+	
+	
+
+	
+
+
+	
+</body>
+</html>

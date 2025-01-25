@@ -68,10 +68,9 @@
         anterior (var sheet_id) </li></ul>
       <ul><li>De ser necesario se puede agregar mas casos en el ciclo for dependiendo
         de los datos que necesitemos manejar</li></ul>
-      
-      
-      <div class="code-container">
-        <button class="copy-button" onclick="copyCode()">Copiar</button>
+
+      <div class="code-container" id="code1">
+        <button class="copy-button" onclick="copyCode('code1')">Copiar</button>
         <pre><code>//1 - Función principal: doGet(e), maneja solicitudes GET
 
 // Si la URL de la solicitud es:
@@ -136,11 +135,6 @@ function stripQuotes( value ) {
   return value.replace(/^["']|['"]$/g, "");
 }</code></pre>
       </div>
-      <script>
-        function copyCode() {
-          const code = document.querySelector('.code-container pre code').innerText;
-          navigator.clipboard.writeText(code);}
-      </script>
       <p>Este código de Google Apps Script crea un punto de entrada HTTP mediante la función doGet(e). 
         Es decir, permite procesar solicitudes GET, guardar datos enviados a través de los parámetros 
         en una hoja de cálculo de Google Sheets y devolver una respuesta.
@@ -174,9 +168,10 @@ function stripQuotes( value ) {
       <h2 style="margin: 5px 0; color: #2cd0e1">5 - Configuración del modulo Arduino</h2>
       <ul><li>Pega el código siguiente en "Arduino IDE" para cargar el programa en la 
         placa Arduino</li></ul>
-      
-      <div class="code-container">
-        <button class="copy-button" onclick="copyCode()">Copiar</button>
+
+
+      <div class="code-container" id="code2">
+        <button class="copy-button" onclick="copyCode('code2')">Copiar</button>
         <pre><code>// Incluye bibliotecas ESP8266WiFi.h y WiFiClientSecure.h
 #include "TRIGGER_WIFI.h"
 // Biblioteca para interactuar con Google Sheets
@@ -204,11 +199,6 @@ void loop()
   delay(10000); 
 }</code></pre>
       </div>
-      <script>
-        function copyCode() {
-          const code = document.querySelector('.code-container pre code').innerText;
-          navigator.clipboard.writeText(code);}
-      </script>
       <ul><li>Modifica las variables definidas en Apps Script, en este ejemplo: 
         (Nivel,Sensor1)</li></ul>
       <ul><li>Asigna el número de variables a enviar</li></ul>
@@ -216,6 +206,18 @@ void loop()
       <ul><li>Pega el GAS ID en "String Sheets_GAS_ID"</li></ul>
       <img src="Img/Nivel_007.jpg" alt="Descripción de la imagen" class="responsive-image">
 	</div><br>
+
+
+
+	
+	<script>
+		function copyCode(containerId) {
+			const codeContainer = document.getElementById(containerId);
+			const code = codeContainer.querySelector('pre code').innerText;
+			navigator.clipboard.writeText(code)
+				.then(() => alert("Código copiado con éxito"))
+				.catch(err => console.error("Error al copiar el código: ", err));}
+	</script>
 
 	
 </body>

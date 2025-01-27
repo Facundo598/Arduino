@@ -103,13 +103,13 @@ function doGet(e) {
       var value = stripQuotes(e.parameter[param]);
       Logger.log(param + ':' + e.parameter[param]);
       switch (param) {
-        case 'Nivel':
-        // Almacena `Nivel` en la columna 2
+        case 'Val1':
+        // Almacena `Valor 1` en la columna 2
           rowData[2] = value;
           result = 'Written on column 2';
           break;
-        case 'Sensor1':
-        // Almacena `Sensor1` en la columna 3
+        case 'Val2':
+        // Almacena `Valor 2` en la columna 3
           rowData[3] = value; 
           result += ' y Written on column 3';
           break;
@@ -160,7 +160,7 @@ function stripQuotes( value ) {
       <img src="Img/Nivel_004.jpg" alt="Descripción de la imagen" class="responsive-image">
       <ul><li>Pega la URL de implementación generada en el navegador y añade a continuación
         el siguiente texto teniendo en cuenta las variables particulares, en este ejemplo:<br>
-        <u style="color: blue">URL de implementación</u>?Nivel=336&Sensor1=589</li></ul>
+        <u style="color: blue">URL de implementación</u>?Val1=336&Val2=589</li></ul>
       <img src="Img/Nivel_005.jpg" alt="Descripción de la imagen" class="responsive-image">
 	</div><br>
   	
@@ -172,36 +172,77 @@ function stripQuotes( value ) {
 
       <div class="code-container" id="code2">
         <button class="copy-button" onclick="copyCode('code2')">Copiar</button>
-        <pre><code>// Incluye bibliotecas ESP8266WiFi.h y WiFiClientSecure.h
-#include "TRIGGER_WIFI.h"
-// Biblioteca para interactuar con Google Sheets
-#include "TRIGGER_GOOGLESHEETS.h"
+        <pre><code>#include <ESP8266WiFi.h>
+#include <WiFiClientSecure.h>
 
-/********** Definiciones para Google Sheets ***********/
-// Adigna nombres de las columnas y deben coincidir con los del Script
-//El tamaño [8] indica 6 caracteres para los nombres(6 = {N,i,v,e,l,\0})
-char column_name_in_sheets[ ][8] = {"Nivel", "Sensor1"}; 
-String Sheets_GAS_ID = "Ingresa tu GAS ID aquí"; 
-// Define cuántas variables se enviarán a Google Sheets.
-int Nun_Variables = 2; 
-/******************************************************/
+// Credenciales de Wi-Fi
+const char* ssid = "Usuario";
+const char* password = "Contraseña";
 
-void setup() 
-{ WIFI_Connect("SSID", "Password"); 
-  Google_Sheets_Init(column_name_in_sheets, Sheets_GAS_ID, Nun_Variables);
+// Configuración de Google Sheets
+const char* host = "script.google.com";
+const int httpsPort = 443;
+String Sheets_GAS_ID = "GAS ID Google Sheet";
+
+// Variables a enviar
+float Val1 = 0.0;
+float Val2 = 0.0;
+
+void setup() {
+  // Configuración de Wi-Fi
+  WiFi.mode(WIFI_STA);
+
+  // Configura manualmente los servidores DNS
+  IPAddress dns1(8, 8, 8, 8);   // DNS primario (Google)
+  IPAddress dns2(8, 8, 4, 4);   // DNS secundario (Google)
+  WiFi.config(0U, 0U, 0U, dns1, dns2); // IP dinámica con DNS personalizado
+  WiFi.begin(ssid, password);
+
+  // Espera la conexión Wi-Fi
+  while (WiFi.status() != WL_CONNECTED) {delay(500);}
 }
 
-void loop() 
-{ float a = 1, b = 2;
-  // Envía los valores definidos a Google Sheets. 
-  Data_to_Sheets(Nun_Variables, a, b, c);
-  // 10 seg para evitar saturar el servidor.
-  delay(10000); 
+String convertirComa(float valor) {
+  // Convierte un número flotante a un string con coma en lugar de punto
+  String str = String(valor, 2); // Convierte a string con 2 decimales
+  str.replace('.', ',');        // Reemplaza punto por coma
+  return str;}
+
+void enviarDatos(float val1, float val2) {
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure client;
+    client.setInsecure();
+
+    // Convierte los valores para enviar con coma en lugar de punto
+    String val1Str = convertirComa(val1);
+    String val2Str = convertirComa(val2);
+
+    // Construcción de la URL dinámica con las variables
+    String url = "/macros/s/" + String(Sheets_GAS_ID) + "/exec?";
+    url += "Val1=" + val1Str + "&Val2=" + val2Str;
+
+    // Conexión al servidor
+    if (client.connect(host, httpsPort)) {
+      // Enviar solicitud GET
+      client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+                   "Host: " + host + "\r\n" +
+                   "Connection: close\r\n\r\n");
+      client.stop();}}
+}
+
+void loop() {
+  // Valores de ejemplo 
+  Val1 = random(0, 100); // Valor aleatorio entre 0 y 100
+  Val2 = random(0, 50);  // Valor aleatorio entre 0 y 50
+  // Enviar datos a Google Sheets
+  enviarDatos(Val1, Val2);
+  // Esperar 10 segundos
+  delay(10000);
 }</code></pre>
       </div>
       <ul><li>Modifica las variables definidas en Apps Script, en este ejemplo: 
-        (Nivel,Sensor1)</li></ul>
-      <ul><li>Asigna el número de variables a enviar</li></ul>
+        (Var1,Var2)</li></ul>
+      <ul><li>Ingresa credenciales para la conexión Wifi</li></ul>
       <img src="Img/Nivel_006.jpg" alt="Descripción de la imagen" class="responsive-image">
       <ul><li>Pega el GAS ID en "String Sheets_GAS_ID"</li></ul>
       <img src="Img/Nivel_007.jpg" alt="Descripción de la imagen" class="responsive-image">
